@@ -1,0 +1,41 @@
+# Secrets and local state — never commit any of these.
+.env
+.env.*
+!.env.example
+
+# Databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python caches and build output
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Scratch space used while developing
+.scratch/
+
+# Editors and OS noise
+.vscode/
+.idea/
+.DS_Store

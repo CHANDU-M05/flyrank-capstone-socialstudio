@@ -1,0 +1,4 @@
+# Local development extras. Install with: pip install -r requirements.txt -r requirements-dev.txt
+-r requirements.txt
+pytest==9.1.1
+pyyaml==6.0.3

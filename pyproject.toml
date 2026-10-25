@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flyrank-social-studio"
+version = "1.0.0"
+description = "Social Media Studio — ingest a source, generate platform variants, review, schedule and publish durably."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "FlyRank Internship — Backend Track" }]
+keywords = ["fastapi", "scheduler", "social-media", "sqlite", "publishing"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Framework :: FastAPI",
+    "License :: OSI Approved :: MIT License",
+]
+
+dependencies = [
+    "fastapi==0.162.0",
+    "uvicorn==0.54.0",
+    "SQLAlchemy==2.1.6",
+    "alembic==1.20.1",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.1",
+    "httpx==0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pyyaml==6.0.3",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[project.urls]
+Documentation = "README.md"
+Source = "https://github.com/CHANDU-M05/flyrank-capstone-social-studio"
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
+filterwarnings = ["error::DeprecationWarning:app.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "C4", "SIM", "ANN"]
+ignore = ["ANN101", "ANN102", "ANN401", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "S101"]
+"alembic/*" = ["ANN"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["alembic/versions"]

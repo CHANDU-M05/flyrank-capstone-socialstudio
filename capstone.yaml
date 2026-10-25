@@ -1,0 +1,125 @@
+# Machine-readable manifest for FlyRank Capstone 05 — Social Media Studio.
+#
+# Structure follows the sibling capstone at ../03-usage-metering-billing/capstone.yaml
+# (run / seed / test / base_url / endpoints[{method, path, auth}]) and adds the fields this
+# project genuinely needs: a second long-running process (the worker), the publisher adapters
+# and the environment variables that change behaviour.
+#
+# tests/test_capstone_yaml.py parses this file and compares `endpoints` with the paths served
+# by the app, so the manifest cannot drift from the code.
+
+name: Social Media Studio
+description: >-
+  Ingest a blog post (pasted Markdown or an SSRF-guarded URL fetch), generate X / LinkedIn /
+  Telegram variants, review and approve them, schedule them as durable database rows, and
+  publish them through one real adapter (Telegram Bot API) and two deterministic mocks.
+version: "1.0.0"
+
+python: ">=3.11"
+stack: [FastAPI, Pydantic v2, SQLAlchemy 2.x, Alembic, SQLite, httpx, pytest]
+
+run: "uvicorn app.main:app --host 127.0.0.1 --port 8020"
+worker: "python scripts/run_worker.py --loop"
+seed: "python scripts/seed.py"
+test: "pytest -q"
+smoke: "python scripts/smoke_test.py --base-url http://127.0.0.1:8020 --ops-token $OPS_TOKEN"
+base_url: "http://127.0.0.1:8020"
+docs_url: "http://127.0.0.1:8020/docs"
+openapi_url: "http://127.0.0.1:8020/openapi.json"
+
+database:
+  default_url: "sqlite:///./studio.db"
+  migrations: "alembic upgrade head"
+  tables: [sources, variants, scheduled_jobs, publication_attempts]
+
+publishers:
+  - name: mock_x
+    platform: x
+    kind: mock
+    needs_credentials: false
+  - name: mock_linkedin
+    platform: linkedin
+    kind: mock
+    needs_credentials: false
+  - name: telegram
+    platform: telegram
+    kind: real
+    needs_credentials: true
+    env: [TELEGRAM_ENABLED, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]
+    dry_run_env: TELEGRAM_DRY_RUN
+
+endpoints:
+  - method: GET
+    path: /
+    auth: none
+  - method: GET
+    path: /health
+    auth: none
+  - method: GET
+    path: /config
+    auth: none
+  - method: GET
+    path: /publishers
+    auth: none
+  - method: POST
+    path: /sources
+    auth: none
+  - method: POST
+    path: /sources/ingest
+    auth: none
+  - method: GET
+    path: /sources
+    auth: none
+  - method: GET
+    path: /sources/{source_id}
+    auth: none
+  - method: POST
+    path: /sources/{source_id}/variants
+    auth: none
+  - method: GET
+    path: /variants
+    auth: none
+  - method: GET
+    path: /variants/{variant_id}
+    auth: none
+  - method: PATCH
+    path: /variants/{variant_id}
+    auth: none
+  - method: POST
+    path: /variants/{variant_id}/validate
+    auth: none
+  - method: POST
+    path: /variants/{variant_id}/approve
+    auth: none
+  - method: POST
+    path: /variants/{variant_id}/reject
+    auth: none
+  - method: POST
+    path: /variants/{variant_id}/reopen
+    auth: none
+  - method: POST
+    path: /variants/{variant_id}/schedule
+    auth: none
+  - method: GET
+    path: /jobs
+    auth: none
+  - method: GET
+    path: /jobs/{job_id}
+    auth: none
+  - method: GET
+    path: /publications
+    auth: none
+  - method: POST
+    path: /ops/run-due
+    auth: X-Ops-Token
+
+scheduler:
+  durable: true
+  mechanism: "database rows claimed with an optimistic UPDATE; no in-process timer"
+  poll_interval_env: SCHEDULER_POLL_SECONDS
+  max_attempts_env: MAX_ATTEMPTS
+  crash_recovery_env: STALE_CLAIM_SECONDS
+  idempotency: "sha256(variant_id|slot) persisted under a UNIQUE constraint"
+
+requires_credentials_to_verify:
+  - "Telegram delivery (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID are not available here)"
